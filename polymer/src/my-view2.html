@@ -10,6 +10,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="shared-styles.html">
+<link rel="import" href="components/sortable.html"/>
+<link rel="import" href="components/sortable-item.html"/>
 
 <dom-module id="my-view2">
   <template>
@@ -19,13 +21,32 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         padding: 10px;
       }
+
+
     </style>
 
     <div class="card">
-      <div class="circle">2</div>
-      <h1>View Two</h1>
-      <p>Ea duis bonorum nec, falli paulo aliquid ei eum.</p>
-      <p>Id nam odio natum malorum, tibique copiosae expetenda mel ea.Detracto suavitate repudiandae no eum. Id adhuc minim soluta nam.Id nam odio natum malorum, tibique copiosae expetenda mel ea.</p>
+      <sortable-elements>
+        <ul>
+          <!--<sortable-item>fdkjasdkjfdsankjasd</sortable-item>-->
+          <li class="sortable-item">
+            <span class="sortable-handle"></span>
+            <h2>Make sortable component</h2>
+          </li>
+          <li class="sortable-item">
+            <span class="sortable-handle"></span>
+            <h2>Handle sorting</h2>
+          </li>
+          <li class="sortable-item">
+            <span class="sortable-handle"></span>
+            <h2>Emit event on update</h2>
+          </li>
+          <li class="sortable-item">
+            <span class="sortable-handle"></span>
+            <h2>Be awesome! ✨🔥</h2>
+          </li>
+        </ul>
+      </sortable-elements>
     </div>
   </template>
 

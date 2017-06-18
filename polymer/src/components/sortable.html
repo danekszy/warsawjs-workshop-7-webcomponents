@@ -1,0 +1,204 @@
+<dom-module id="simple-clock">
+    <template id="simple-clock-template">
+        <style>
+            .container > * {
+                position: relative;
+            }
+
+            .sortable-handle {
+                display: inline-block;
+                width: 1.5em;
+                height: 1.5em;
+                font-size: 28px;
+                background-color: #eee;
+                color: #aaa;
+                vertical-align: middle;
+                margin-right: 20px;
+                cursor: move;
+                text-align: center;
+                line-height: 1.45em;
+                margin-top: -6px;
+            }
+
+            .sortable-handle::before {
+                content:'\2630';
+                font-size: em;
+            }
+
+            .sortable-placeholder {
+                display: block;
+                background-color: rgba(0,0,0, .07);
+                box-shadow: 0 5px 15px -3px rgba(0,0,0, .2) inset;
+                height: 50px;
+            }
+
+            .sortable-item {
+                user-select: none;
+                -webkit-user-select: none;
+            }
+
+            .sortable-dragging {
+                position: absolute;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+                box-shadow: 0 6px 16px -2px rgba(0,0,0, .2);
+                transform: scale(1.02);
+            }
+
+            ul {
+                margin: 0;
+                padding: 0;
+                list-style-type: none;
+                position: relative;
+            }
+
+            li {
+                display: block;
+                overflow: hidden;
+                border-bottom: 2px solid #888;
+                background-color: rgba(255,255,255, .75);
+                padding: 0 1em;
+                transition: transform .12s ease;
+            }
+
+            h2 {
+                display: inline-block;
+            }
+        </style>
+        <div class="container"></div>
+    </template>
+    <script>
+        (function(){
+            const thatDoc = document;
+            const thisDoc = (thatDoc._currentScript || thatDoc.currentScript).ownerDocument;
+            const template = thisDoc.querySelector('template').content;
+
+            const itemPlaceholder = document.createElement("div");
+
+            itemPlaceholder.className = 'sortable-placeholder';
+
+            class Sortable extends HTMLElement {
+                static get observedAttributes() {
+                    return ['time'];
+                }
+
+                get currentTime() {
+                    return Number(this.getAttribute('time')) || 0;
+                }
+
+                set currentTime(val) {
+                    this.setAttribute('time', Number(val));
+                }
+
+                constructor() {
+                    super();
+                    this.onMouseMove = this.onMouseMove.bind(this);
+                }
+
+                connectedCallback() {
+                    this.attachComponent();
+                }
+
+                attributeChangedCallback(attrName, oldVal, newVal) {
+                    if(attrName === 'time') {
+
+                    }
+                }
+
+                attachComponent() {
+                    let items = [];
+                    this.shdw = this.attachShadow({mode: 'open'});
+                    const instance = template.cloneNode(true);
+                    const container = instance.querySelector('.container');
+                    [...this.children].forEach((child) => {
+                        this.attachEvents(child);
+                        container.appendChild(child);
+                        const childItems = [...child.querySelectorAll('.sortable-item')];
+                        items = items.concat(childItems);
+                    });
+
+                    this.shdw.appendChild(instance);
+                    this.items = items.map((item) => ({
+                        top: item.offsetTop,
+                        height: item.offsetHeight,
+                        elem: item
+                    }));
+                }
+
+                attachEvents(child) {
+                    child.addEventListener('mousedown', this.onMouseDown.bind(this));
+                    child.addEventListener('mouseup', this.onMouseUp.bind(this));
+                }
+
+                onMouseDown(e) {
+                    e.stopPropagation();
+                    const item = e.target.closest('.sortable-item');
+                    this.startDragMode(item);
+                    this.initialScreenY = e.screenY;
+                    this.addEventListener('mousemove', this.onMouseMove);
+                }
+
+                onMouseMove(e) {
+                    e.stopPropagation();
+                    const delta = e.screenY - this.initialScreenY;
+                    const newTop = this.initialOffsetTop + delta;
+                    this.currentItem.style.top = newTop + 'px';
+                    this.placeholderPos = this.findClosestItemByOffset(newTop, this.currentItem.offsetHeight);
+                    this.movePlaceholder(this.placeholderPos);
+                }
+
+                onMouseUp(e) {
+                    e.stopPropagation();
+                    this.removeEventListener('mousemove', this.onMouseMove);
+                    this.stopDragMode();
+                }
+
+                startDragMode(item) {
+                    this.currentItem = item;
+                    const itemHeight = item.offsetHeight;
+                    this.initialOffsetTop = item.offsetTop;
+                    item.classList.add('sortable-dragging');
+                    item.style.top = this.initialOffsetTop + 'px';
+                    itemPlaceholder.style.height = itemHeight + 'px';
+                    item.parentNode.insertBefore(itemPlaceholder, item);
+                }
+
+                stopDragMode() {
+                    this.currentItem.parentNode.removeChild(itemPlaceholder);
+                    this.currentItem.classList.remove('sortable-dragging');
+                    this.moveCurrentItem(this.placeholderPos);
+                    this.currentItem = null;
+                }
+
+                findClosestItemByOffset(offset, height) {
+                    const fakeItem = [{ elem: null, top: -3, height: this.items[0].height }];
+                    const positions = fakeItem.concat(this.items).map((item, index) => ({
+                        index,
+                        elem: item.elem,
+                        delta: Math.abs((item.top + item.height/2) - (offset + height/2))
+                    })).sort((a, b) => a.delta > b.delta);
+                    return positions[0].index - 1;
+                }
+
+                movePlaceholder(pos) {
+                    const parent = this.currentItem.parentNode;
+                    // const replacedItem = parent.querySelectorAll('.sortable-item')[pos];
+                    const replacedSibling = pos === -1
+                        ? parent.querySelectorAll('.sortable-item')[0]
+                        : parent.querySelectorAll('.sortable-item')[pos].nextSibling
+                    parent.insertBefore(itemPlaceholder, replacedSibling);
+                }
+
+                moveCurrentItem(pos) {
+                    const parent = this.currentItem.parentNode;
+                    const replacedSibling = pos === -1
+                        ? parent.querySelectorAll('.sortable-item')[0]
+                        : parent.querySelectorAll('.sortable-item')[pos].nextSibling
+                    parent.insertBefore(this.currentItem, replacedSibling);
+                }
+            }
+            window.customElements.define('sortable-elements', Sortable);
+        })();
+    </script>
+</dom-module>
