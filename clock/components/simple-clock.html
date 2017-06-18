@@ -1,0 +1,120 @@
+<template id="simple-clock-template">
+    <style>
+        .container {
+            border: 2px solid #333;
+            background-color: #444;
+            color: #fff;
+            width: 400px;
+            margin: 0 auto;
+        }
+
+        .clock {
+            font-family: monospace;
+            font-size: 60px;
+            line-height: 1.5em;
+            text-align: center;
+        }
+
+        .button {
+
+        }
+    </style>
+    <div class="container">
+        <div class="clock">00:00:000</div>
+        <button class="button button-start">Start</button>
+        <button class="button button-stop">Stop</button>
+    </div>
+</template>
+<script>
+    const zeroFill = function(number, width) {
+        width -= number.toString().length;
+        if ( width > 0 ) {
+            return new Array( width + (/\./.test( number ) ? 2 : 1) ).join( '0' ) + number;
+        }
+        return number + "";
+    }
+
+    const formatTime = function(miliseconds) {
+        const seconds = zeroFill(Math.floor(miliseconds/1000), 2);
+        const minutes = zeroFill(Math.floor(seconds/60), 2);
+        const rest = zeroFill(Math.floor(miliseconds % 1000), 3);
+        return `${minutes}:${seconds}:${rest}`;
+    }
+
+    class SimpleClock extends HTMLElement {
+        static get observedAttributes() {
+            return ['time'];
+        }
+
+        get currentTime() {
+            return Number(this.getAttribute('time')) || 0;
+        }
+
+        set currentTime(val) {
+            this.setAttribute('time', Number(val));
+        }
+
+        constructor() {
+            super();
+            console.log('construct clock');
+        }
+
+        connectedCallback() {
+            this.attachComponent();
+            this.attachEvents();
+            this.updateClock(this.currentTime);
+        }
+        // disconnectedCallback() {
+
+        // }
+        attributeChangedCallback(attrName, oldVal, newVal) {
+            if(attrName === 'time') {
+                const newTime = Number(newVal);
+                if(this.currentTime !== newTime) this.currentTime = newTime;
+            }
+        }
+
+        attachComponent() {
+            let shadowRoot = this.attachShadow({mode: 'open'});
+            const component = document.currentScript.ownerDocument;
+            const template = component.querySelector('template');
+            const instance = template.content.cloneNode(true);
+            shadowRoot.appendChild(instance);
+
+            this.clockContainer = shadowRoot.querySelector('.container');
+            this.clockInstance = this.clockContainer.querySelector('.clock');
+        }
+
+        attachEvents() {
+            this.clockContainer
+                .querySelector('.button-start')
+                .addEventListener('click', this.startClock.bind(this));
+            this.clockContainer
+                .querySelector('.button-stop')
+                .addEventListener('click', this.stopClock.bind(this));
+        }
+
+        startClock() {
+            this.startTime = Date.now();
+            this.interval = setInterval(this.tickClock.bind(this), 10);
+        }
+
+        stopClock() {
+            this.interval && clearInterval(this.interval);
+            this.interval = null;
+            const delta = Date.now() - this.startTime;
+            this.currentTime += delta;
+        }
+
+        tickClock() {
+            const delta = Date.now() - this.startTime;
+            this.updateClock(this.currentTime + delta);
+        }
+
+        updateClock(val) {
+            this.clockInstance.innerText = formatTime(val);
+        }
+    }
+
+    window.customElements.define('simple-clock', SimpleClock);
+</script>

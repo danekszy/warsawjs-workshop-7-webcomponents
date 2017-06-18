@@ -1,0 +1,20 @@
+{
+  "name": "warsawjs-workshop-7-clock",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "webcomponents.js": "^0.7.24"
+  },
+  "devDependencies": {
+    "http-server": "^0.10.0"
+  },
+  "scripts":{
+    "start": "http-server"
+  }
+}
