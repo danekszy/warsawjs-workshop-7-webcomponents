@@ -6,7 +6,7 @@
                 background-color: #444;
                 color: #fff;
                 width: 400px;
-                margin: 0 auto;
+                margin: 10px auto;
                 display: flex;
                 flex-wrap: wrap;
             }
@@ -41,8 +41,8 @@
         }
 
         const formatTime = function(miliseconds) {
-            const seconds = zeroFill(Math.floor(miliseconds/1000), 2);
-            const minutes = zeroFill(Math.floor(seconds/60), 2);
+            const seconds = zeroFill(Math.floor(miliseconds/1000%60), 2);
+            const minutes = zeroFill(Math.floor(miliseconds/1000/60%60), 2);
             const rest = zeroFill(Math.floor(miliseconds % 1000), 3);
             return `${minutes}:${seconds}:${rest}`;
         }
@@ -87,8 +87,6 @@
 
             attachComponent() {
                 let shdw = this.attachShadow({mode: 'open'});
-                const component = document.currentScript.ownerDocument;
-                console.log('component1', template);
                 const instance = template.cloneNode(true);
                 shdw.appendChild(instance);
 
@@ -106,15 +104,24 @@
             }
 
             startClock() {
+                if(this.status === 'running') {
+                    return;
+                }
+
                 this.startTime = Date.now();
                 this.interval = setInterval(this.tickClock.bind(this), 10);
+                this.status = 'running';
             }
 
             stopClock() {
+                if(this.status !== 'running') {
+                    return;
+                }
                 this.interval && clearInterval(this.interval);
                 this.interval = null;
                 const delta = Date.now() - this.startTime;
                 this.currentTime += delta;
+                this.status = 'stopped';
             }
 
             tickClock() {
